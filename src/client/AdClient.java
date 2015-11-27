@@ -11,18 +11,20 @@ import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Scanner;
+import java.net.InetAddress;
 
 import utils.Ad;
 import utils.Transaction;
+import utils.ClientInfo;
 import client.PeerListener;
 
 public class AdClient extends Thread {
 	/* Données serveur */
 	public static final String LOCAL_SERVER = "localhost";
 	public static final int PORT_SERVER = 1027;
-	private static volatile LinkedList<Ad> adList = new LinkedList<Ad>();
 
 	/* Communication avec le serveur */
+	private LinkedList<Ad> adList;
 	private Socket servSock;
 	private DataInputStream in;
 	private DataOutputStream out;
@@ -31,10 +33,10 @@ public class AdClient extends Thread {
 	private boolean end;
 
 	/* Communication avec les clients */
-	private DatagramSocket udpSock;
-	private DatagramPacket dp;
 	private LinkedList<String> msgList;
 	private LinkedList<Transaction> transacList;
+	private DatagramSocket udpSock;
+	private DatagramPacket dp;
 	private PeerListener pl;
 	private final int TAILLE_COMMANDES = 2;
 	private final String ADD_AD = "ad", DEL_AD = "rm", LS_AD = "ls",
@@ -45,6 +47,7 @@ public class AdClient extends Thread {
 	public AdClient() {
 		userIn = new Scanner(System.in);
 		end = false;
+		adList = new LinkedList<Ad>();
 		msgList = new LinkedList<String>();
 		transacList = new LinkedList<Transaction>();
 
@@ -54,7 +57,7 @@ public class AdClient extends Thread {
 			e.printStackTrace();
 			System.exit(0);
 		}
-		pl = new PeerListener(udpSock);
+		pl = new PeerListener(udpSock, this);
 		pl.setDaemon(true);
 	}
 
@@ -88,30 +91,6 @@ public class AdClient extends Thread {
 				System.out.println(it.next().toClientOutput());
 		}
 	}
-
-	/* Imprimme la liste des messages des clients */
-	public void listMsg() {
-		Iterator<String> it = msgList.iterator();
-		if (msgList.isEmpty()) {
-			System.out.println("Aucun message de clients.");
-		} else {
-			while (it.hasNext()) {
-				System.out.println(it.next());
-			}
-		}
-	}
-
-	/* Imprimme la liste des transactions proposées par les clients */
-	public void listTransac() {
-		Iterator<Transaction> it = transacList.iterator();
-		if (transacList.isEmpty()) {
-			System.out.println("Aucune transaction proposée.");
-		} else {
-			while (it.hasNext())
-				System.out.println(it.next().toString());
-		}
-	}
-
 
 	synchronized public void addAd(Ad a) {
 		adList.add(a);
@@ -147,6 +126,8 @@ public class AdClient extends Thread {
 	}
 
 	/* Méthodes concernants les clients */
+	// TODO faire un objet pour chaque chose et ne gérer que les inputs ici
+	// : gestion des interaction client, gestion des interaction servers et ici c'est gestion des interaction user
 	public void sendClient(int adId, String messageType, String message) {
 		// retrouver l'annonce dans adList qui correspond à l'adId donné
 		String msg;
@@ -174,6 +155,70 @@ public class AdClient extends Thread {
 		}
 	}
 
+	/* Imprimme la liste des transactions proposées par les clients */
+	public void listTransac() {
+		Iterator<Transaction> it = transacList.iterator();
+		if (transacList.isEmpty()) {
+			System.out.println("Aucune transaction proposée.");
+		} else {
+			while (it.hasNext())
+				System.out.println(it.next());
+		}
+	}
+
+	/* Imprimme la liste des messages des clients */
+	public void listMsg() {
+		Iterator<String> it = msgList.iterator();
+		if (msgList.isEmpty()) {
+			System.out.println("Aucun message de clients.");
+		} else {
+			while (it.hasNext()) {
+				System.out.println(it.next());
+			}
+		}
+	}
+
+
+	public synchronized void addClientMessage(String s) {
+		msgList.add(s);
+	}
+
+	public synchronized void addTransaction(Transaction t) {
+		transacList.add(t);
+	}
+
+
+	/* Permet d'obtenir l'id d'un client à partir de son adresse et son port
+	 * ou -1 si l'addresse et le port donnés ne correspondent à personne */
+	public int resolveClientId(InetAddress add, int port) {
+		ClientInfo c;
+		Iterator<Ad> it = adList.iterator();
+		while(it.hasNext()) {
+			c = it.next().getClientInfo();
+			if (c.getIp() == add && c.getPort() == port) {
+				return c.getId();
+			}
+		}
+		return -1;
+	}
+
+	// Vérifie que l'id du client correspond bien à l'auteur de l'annonce
+	public boolean checkAuthor(int id, String adId) {
+		Ad a;
+		Iterator<Ad> it = adList.iterator();
+		while(it.hasNext()) {
+			a = it.next();
+			if (a.getAdId().equals(adId)) {
+				if (a.getClientInfo().getId() == id)
+					return true;
+				else
+					break;
+			}
+		}
+		return false;
+	}
+
+	/* Fonctions qui concernent la gestion des entrées clavier */
 	private void printCommands() {
 		System.out.println("Ajout d'une annonce : "+ADD_AD+" <message de l'annonce>");
 		System.out.println("Supression d'une annonce : "+DEL_AD+" <id-annonce>");
@@ -215,6 +260,7 @@ public class AdClient extends Thread {
 					//TODO sendClient...
 				break;
 				case ASK_TRANSAC:
+					// Faire gaffe a ne pas s'envoyer à soi-même
 					// TODO udp server send "AD QUERY choice.substring(4)"
 				break;
 				case SHW_MSG:
@@ -225,11 +271,11 @@ public class AdClient extends Thread {
 				break;
 				case OK_TRANSAC:
 					// TODO udp server send "AD ACCEPT choice.substring(3)"
+					// On supprime l'annonce après avoir accepté
 					sendServer("AD\r\nDEL\r\nID "+choice.substring(3).trim()+"\r\n");
 				break;
 				case KO_TRANSAC:
 					// TODO udp server send "AD REFUSE choice.substring(3)"
-					sendServer("AD\r\nDEL\r\nID "+choice.substring(3).trim()+"\r\n");
 				break;
 				case EXIT:
 					end = true;
@@ -245,7 +291,6 @@ public class AdClient extends Thread {
 			}
 		}
 		sl.close();
-		pl.close();
 		closeConnexion();
 	}
 

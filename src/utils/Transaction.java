@@ -3,9 +3,10 @@ package utils;
 import utils.ClientInfo;
 
 public class Transaction {
-	private int id, clientId, adId;
+	private int id, clientId;
+	private String adId;
 
-	public Transaction(int i, int c, int a) {
+	public Transaction(int i, int c, String a) {
 		this.id = i;
 		this.clientId = c;
 		this.adId = a;
@@ -19,7 +20,7 @@ public class Transaction {
 		return clientId;
 	}
 
-	public int getAdId() {
+	public String getAdId() {
 		return adId;
 	}
 
