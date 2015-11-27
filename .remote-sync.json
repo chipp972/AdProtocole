@@ -1,0 +1,14 @@
+{
+  "transport": "sftp",
+  "uploadOnSave": true,
+  "deleteLocal": false,
+  "hostname": "nivose.informatique.univ-paris-diderot.fr",
+  "port": "22",
+  "target": "/info/master2/pierrech/PR",
+  "ignore": [
+    ".remote-sync.json",
+    ".git/**"
+  ],
+  "username": "pierrech",
+  "password": "tatirtir"
+}

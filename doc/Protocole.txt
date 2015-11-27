@@ -1,0 +1,79 @@
+# Ce document décrit le protocole utilisé pour les communications
+# client-serveur et client-client
+#
+# Groupe :
+# 	GALMI Aimé             : maxgalmi@gmail.com
+# 	COTTIN Kevin           : cottin@informatique.univ-paris-diderot.fr
+# 	BOUGRINE Youness       : youness.bougrine@gmail.com
+# 	ZERROUAL Soufiane      : zerroualsoufiane@gmail.com
+# 	PIERRE-CHARLES Nicolas : pierrecharles.nicolas@gmail.com
+
+Informations sur le serveur :
+	- ip connu (localhost)
+	- port 1027
+
+Informations sur le client :
+	- ip + port (donnés pour chaque annonce) -- pour la communication en UDP
+
+Déroulement d'une connexion d'un client au serveur :
+	1. le serveur attend des clients
+	2. un client demande une connexion en TCP sur l'Ip+port
+	3. le client envoie le PORT UDP pour la connexion client-client
+	4. le serveur envoie les annonces au client.
+	5. [boucle]
+		5.1 le serveur envoie les nouvelles annonces qui sont publiées/enlevées
+		5.2 le serveur attend les messages du client (déconexion, ajout d'annonce...)
+		5.3 le client envoie un ajout/une suppression d'annonce
+	6. le client envoie un message de déconnexion au serveur
+	7. le serveur suprimme toutes les annonces du client
+
+Notes :
+	a. 5.1, 5.2, 5.3 sont réalisés en parallèle.
+
+
+
+
+Messages :
+
+Partie Client-Serveur :
+
+	Client envoie son port UDP au serveur
+		USR \r\n PORT port \r\n
+
+	Client qui envoie une annonce au serveur
+		AD \r\n ADD \r\n MSG msg \r\n
+			msg = contenu d'un message
+
+	Client qui envoie une suppression d'annonce au serveur
+		AD \r\n DEL \r\n ID id-annonce \r\n
+
+	Client qui envoie un message de deconnexion au serveur
+		DISCONNECT \r\n
+
+	Serveur qui envoie un ajout d'annonce à un client
+		AD \r\n SEND \r\n ID id-annonce \r\n IPv4 ip \r\n PORT port \r\n MSG msg \r\n
+
+	Serveur qui envoie une supression d'annonce à un client
+		AD \r\n DEL \r\n ID id-annonce \r\n
+
+	Serveur qui envoie une erreur au client
+		SYS \r\n ERROR error \r\n
+			error :
+				001 = Bad Request
+				002 = Refused Request (Delete)
+
+
+Partie Client-Client:
+
+	Client qui envoie un message à un autre client
+		AD \r\n ID id-annonce \r\n MSG msg \r\n
+			msg = contenu d'un message (1000 caractères max)
+
+	Client qui demande de conclure la transaction
+		AD \r\n QUERY \r\n ID id-annonce \r\n
+
+	Client qui accepte de conclure la transaction
+		AD \r\n ACCEPT \r\n ID id-annonce \r\n
+
+	Client qui refuse de conclure la transaction
+		AD \r\n REFUSE \r\n ID id-annonce \r\n
