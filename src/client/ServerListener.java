@@ -9,10 +9,10 @@ import utils.ClientInfo;
 public class ServerListener extends Thread {
 	private DataInputStream in;
 	private boolean end;
-	private AdClient main;
+	private ServerHandler main;
 	private int cId;
 
-	public ServerListener(DataInputStream in, AdClient main) {
+	public ServerListener(DataInputStream in, ServerHandler main) {
 		this.in = in;
 		this.end = false;
 		this.main = main;
@@ -67,7 +67,7 @@ public class ServerListener extends Thread {
 				System.out.println("Fin de communication avec le serveur.");
 				System.out.println("Appuyez sur entrée pour terminer...");
 				end = true;
-				main.endCommunication();
+				main.close();
 			} catch (NullPointerException e) {
 				break;
 			}

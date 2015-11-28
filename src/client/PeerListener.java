@@ -18,11 +18,11 @@ public class PeerListener extends Thread {
 	private DatagramPacket dp;
 	private byte [] buf;
 	private boolean end;
-	private AdClient main;
+	private PeerHandler main;
 	private int transacId;
 	private final int TAILLE_MAX_BUFFER = 1000;
 
-	public PeerListener(DatagramSocket s, AdClient m) {
+	public PeerListener(DatagramSocket s, PeerHandler m) {
 		this.end = false;
 		this.s = s;
 		this.buf = new byte[TAILLE_MAX_BUFFER];
@@ -34,12 +34,10 @@ public class PeerListener extends Thread {
 	public void run() {
 		String message, adId;
 		String[] strs;
-		int id;
 		while (true) {
 			try {
 				s.receive(dp);
 				message = new String(dp.getData());
-				id = main.resolveClientId(dp.getAddress(), dp.getPort());
 				// Parsing et traitement du message
 				strs = message.split("\r\n");
 				if (strs[0].trim().equals("AD")) {
@@ -52,12 +50,10 @@ public class PeerListener extends Thread {
 						break;
 						case "ACCEPT":
 							// On indique qu'une transaction a été accepté
-							if (main.checkAuthor(id, adId))
 								main.addClientMessage("Ad"+adId+" = Transaction acceptée");
 						break;
 						case "REFUSE":
 							// On indique qu'on a eu un refus
-							if (main.checkAuthor(id, adId))
 								main.addClientMessage("Ad"+adId+" = Refus de transaction");
 						break;
 						default:
