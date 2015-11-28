@@ -336,7 +336,7 @@ public class AdClient extends Thread {
 		while(userIn.hasNextLine() && !end) {
 			choice = userIn.nextLine();
 			try {
-				if(choice.length() > TAILLE_COMMANDES) {
+				if(choice.length() >= TAILLE_COMMANDES) {
 					switch(choice.substring(0, TAILLE_COMMANDES)) {
 					case ADD_AD:
 						strs = choice.trim().split(" ", 2);
