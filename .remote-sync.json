@@ -4,7 +4,7 @@
   "deleteLocal": false,
   "hostname": "nivose.informatique.univ-paris-diderot.fr",
   "port": "22",
-  "target": "/info/master2/pierrech/PR",
+  "target": "/info/master2/pierrech/PR/TP2/",
   "ignore": [
     ".remote-sync.json",
     ".git/**"
