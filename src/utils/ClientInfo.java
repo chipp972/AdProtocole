@@ -15,8 +15,8 @@ public class ClientInfo {
 	}
 
 	/* Constructeur utilisé par le client */
-	public ClientInfo(String ip, String port) throws UnknownHostException {
-		this.id = 0;
+	public ClientInfo(int i, String ip, String port) throws UnknownHostException {
+		this.id = i;
 		this.port = Integer.parseInt(port);
 		this.ip = InetAddress.getByName(ip);
 	}

@@ -34,19 +34,13 @@ public class PeerListener extends Thread {
 	public void run() {
 		String message, adId;
 		String[] strs;
-		int port, id;
-		InetAddress ip;
+		int id;
 		while (true) {
 			try {
 				s.receive(dp);
 				message = new String(dp.getData());
-				port = dp.getPort();
-				ip = dp.getAddress();
-				id = main.resolveClientId(ip, port);
-
+				id = main.resolveClientId(dp.getAddress(), dp.getPort());
 				// Parsing et traitement du message
-				System.out.println("test : "+message);
-
 				strs = message.split("\r\n");
 				if (strs[0].trim().equals("AD")) {
 					adId = strs[2].trim().substring(3).trim();
@@ -54,7 +48,7 @@ public class PeerListener extends Thread {
 					switch (strs[1].trim()) {
 						case "QUERY":
 							// on rajoute une transaction à la liste
-							main.addTransaction(new Transaction((transacId++), id, adId));
+							main.addTransaction(new Transaction((transacId++), dp.getPort(), dp.getAddress(), adId));
 						break;
 						case "ACCEPT":
 							// On indique qu'une transaction a été accepté
@@ -69,7 +63,7 @@ public class PeerListener extends Thread {
 						default:
 							if(strs[1].trim().substring(0, 2).equals("ID")) {
 								// il faut ajouter un message client à la liste
-								main.addClientMessage("Client "+id+" on Ad "+strs[1].trim().substring(3).trim()+" = "+strs[2].trim());
+								main.addClientMessage("Client "+dp.getAddress()+"/"+dp.getPort()+" on Ad "+strs[1].trim().substring(3).trim()+" = "+strs[2].trim().substring(3).trim());
 							}
 					}
 				}

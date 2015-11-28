@@ -54,8 +54,8 @@ public class AdClient extends Thread {
 		transacList = new LinkedList<Transaction>();
 
 		try {
-			udpSock = new DatagramSocket(0, InetAddress.getByName("localhost"));
-		} catch (SocketException | UnknownHostException e) {
+			udpSock = new DatagramSocket();
+		} catch (SocketException e) {
 			e.printStackTrace();
 			System.exit(0);
 		}
@@ -143,12 +143,11 @@ public class AdClient extends Thread {
 				return;
 			}
 		} else {
-			if((a = getAd(id)) == null) {
-				System.out.println("Probleme sur l'annonce de la transaction");
-				return;
-			}
+			a = getAd(id);
+			System.out.println("test "+a.getClientInfo().getIp()+" "+udpSock.getInetAddress()+" "+a.getClientInfo().getPort()+" "+udpSock.getLocalPort());
+
 			// Si on selectionne une de nos annonces on annule l'envoie
-			if (a.getClientInfo().getIp().equals(udpSock.getLocalAddress()) &&
+			if (a.getClientInfo().getIp().equals(udpSock.getInetAddress()) &&
 				a.getClientInfo().getPort() == udpSock.getLocalPort()) {
 					System.out.println("Erreur : vous etes le proprietaire de cette annonce");
 					return;
@@ -179,8 +178,6 @@ public class AdClient extends Thread {
 				dp = new DatagramPacket(buf, msg.length(), a.getClientInfo().getIp(), a.getClientInfo().getPort());
 			}
 			udpSock.send(dp);
-			if (messageType.equals(OK_TRANSAC)) // on suppr l'annonce après ok
-				sendServer("AD\r\nDEL\r\nID "+a.getAdId()+"\r\n");
 		} catch(IOException | NullPointerException e) {
 			System.out.println("Erreur lors de l'envoie au client ");
 		}
@@ -256,17 +253,8 @@ public class AdClient extends Thread {
 		return null;
 	}
 
-	// Supprime toutes les transactions en rapport avec l'id d'annonce donné
-	public void cleanTransac(String adId) {
-		Transaction t;
-		Iterator<Transaction> it = transacList.iterator();
-		while(it.hasNext()) {
-			t = it.next();
-			if (t.getAdId() == adId)
-				it.remove();
-		}
-	}
-	// Supprime toutes les transactions qui contiennent l'annonce que l'on vient de céder
+
+	// Supprimme toutes les transactions qui contiennent l'annonce que l'on vient de céder
 	public void cleanTransac(int id) {
 		Transaction t;
 		String adId = null;
@@ -278,11 +266,17 @@ public class AdClient extends Thread {
 				break;
 			}
 		}
-		if (!(adId == null))
-			cleanTransac(adId);
+		if (adId == null)
+			return;
+		it = transacList.iterator();
+		while(it.hasNext()) {
+			t = it.next();
+			if (t.getAdId() == adId)
+				it.remove();
+		}
 	}
 
-	// Supprime la transaction identifiée par l'id
+	// Supprimme la transaction identifiée par l'id
 	public void rmTransac(int id) {
 		Transaction t;
 		Iterator<Transaction> it = transacList.iterator();
@@ -370,11 +364,20 @@ public class AdClient extends Thread {
 							System.out.println("Erreur dans la commande");
 					break;
 					case OK_TRANSAC:
-					case KO_TRANSAC:
 						strs = choice.trim().split(" ");
 						if (strs.length > 1) {
 							sendClient(strs[1].trim(), strs[0].trim(), null);
 							cleanTransac(Integer.parseInt(strs[1].trim()));
+							sendServer("AD\r\nDEL\r\nID "+strs[1].trim()+"\r\n");
+						} else {
+							System.out.println("Erreur dans la commande");
+						}
+					break;
+					case KO_TRANSAC:
+						strs = choice.trim().split(" ");
+						if (strs.length > 1) {
+							sendClient(strs[1].trim(), strs[0].trim(), null);
+							rmTransac(Integer.parseInt(strs[1].trim()));
 						} else {
 							System.out.println("Erreur dans la commande");
 						}
@@ -397,9 +400,9 @@ public class AdClient extends Thread {
 						System.out.println("\"he\" pour un rappel des commandes");
 					}
 				}
-			} catch (NumberFormatException e) {
-				System.out.println("Erreur sur un id dans la commande");
-			}
+				} catch (NumberFormatException e) {
+					System.out.println("Erreur sur un id dans la commande");
+				}
 		}
 		sl.close();
 		closeConnexion();
@@ -414,7 +417,7 @@ public class AdClient extends Thread {
 
 			} else if(args.length == 1) { //Sur le réseau local
 				c = new AdClient();
-				c.connexion(new Socket(InetAddress.getByName(args[0]), PORT_SERVER));
+				c.connexion(new Socket(args[0], PORT_SERVER));
 
 			} else {
 				System.out.println("Usage 1 : java -jar client.jar");

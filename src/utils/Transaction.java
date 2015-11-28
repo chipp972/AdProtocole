@@ -1,14 +1,19 @@
 package utils;
 
+import java.net.InetAddress;
 import utils.ClientInfo;
 
 public class Transaction {
-	private int id, clientId;
+	private int id, port;
 	private String adId;
+	private InetAddress ip;
 
-	public Transaction(int i, int c, String a) {
+	// On préfère ip, port à client id ici puisqu'un client n'ayant posté aucune
+	// annonce peut envoyer une transaction
+	public Transaction(int i, int p, InetAddress ad, String a) {
 		this.id = i;
-		this.clientId = c;
+		this.ip = ad;
+		this.port = p;
 		this.adId = a;
 	}
 
@@ -16,15 +21,20 @@ public class Transaction {
 		return id;
 	}
 
-	public int getClientId() {
-		return clientId;
+	public InetAddress getClientIp() {
+		return ip;
 	}
+
+	public int getClientPort() {
+		return port;
+	}
+
 
 	public String getAdId() {
 		return adId;
 	}
 
 	public String toString() {
-		return new String(id+"|C"+clientId+"|A"+adId);
+		return new String("Transaction : "+id+"|Client : "+ip+"/"+port+"|Annonce : "+adId);
 	}
 }

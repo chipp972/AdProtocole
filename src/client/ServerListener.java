@@ -10,11 +10,13 @@ public class ServerListener extends Thread {
 	private DataInputStream in;
 	private boolean end;
 	private AdClient main;
+	private int cId;
 
 	public ServerListener(DataInputStream in, AdClient main) {
 		this.in = in;
 		this.end = false;
 		this.main = main;
+		this.cId = 0;
 	}
 
 	public void close() {
@@ -34,13 +36,14 @@ public class ServerListener extends Thread {
 						case "SEND":
 							i++;
 							main.addAd(new Ad(strs[i].trim().substring(3), strs[i+3].trim().substring(4),
-									new ClientInfo(strs[i+1].trim().substring(6),
+									new ClientInfo(cId++, strs[i+1].trim().substring(6),
 											strs[i+2].trim().substring(5))));
 							i += 3;
 							break;
 						case "DEL":
 							i++;
 							main.delAd(strs[i].trim().substring(3));
+							main.cleanTransac(strs[i].trim().substring(3)); // On supprime les annonces également
 							break;
 						}
 						break;
