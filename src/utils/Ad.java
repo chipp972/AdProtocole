@@ -20,7 +20,7 @@ public class Ad {
 	public String toMessage() {
 		return new String("AD\r\nSEND\r\n"+
 						"ID "+getAdId()+"\r\n"+
-						"IPv4 "+getClientInfo().getIp()+"\r\n"+
+						"IPv4 "+getClientInfo().getIp().getHostAddress()+"\r\n"+
 						"PORT "+getClientInfo().getPort()+"\r\n"+
 						"MSG "+getMsg()+"\r\n");
 	}

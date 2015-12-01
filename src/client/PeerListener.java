@@ -41,6 +41,7 @@ public class PeerListener extends Thread {
 			try {
 				s.receive(dp);
 				message = new String(dp.getData());
+				System.out.println(message);
 				// Parsing et traitement du message
 				strs = message.split("\r\n");
 				if (strs[0].trim().equals("AD")) {
@@ -64,7 +65,7 @@ public class PeerListener extends Thread {
 								// il faut ajouter un message client à la liste
 								main.addClientMessage("Client "+dp.getAddress()+"/"+dp.getPort()+" on Ad "+strs[1].trim().substring(3).trim()+" = "+strs[2].trim().substring(3).trim());
 								// On ajoute le client à la liste des pairs
-								main.addPeer(""+cId++, dp.getAddress(), dp.getPort());
+								main.addPeer(""+cId++, strs[1].trim().substring(3).trim(), dp.getAddress(), dp.getPort());
 							}
 					}
 				}

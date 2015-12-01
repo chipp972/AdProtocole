@@ -8,20 +8,31 @@ public class ClientInfo {
 	private InetAddress ip;
 	private String id, adId;
 
-	/* Constructeur utilisé par le serveur */
-	public ClientInfo(String id, InetAddress ip, int port) {
-		this.id = id;
+/* Constructeur utilisé par le serveur */
+	/**
+	 * Constructeur utilisé par le serveur et par le client
+	 * @param   id   l'id du client (serveur) / pair (client)
+	 * @param   adId l'id de l'annonce (client)
+	 * @param   ip   l'ip du client
+	 * @param   port le port du client
+	 */
+	public ClientInfo(String id, String adId, InetAddress ip, int port) {
+		this.id = id; // clientId sur le server et peerId sur le client
 		this.ip = ip;
 		this.port = port;
-		this.adId = "0";
+		this.adId = adId;
 	}
 
-	/* Constructeur utilisé par le client lorsqu'il reçoit les annonces du serveur */
-	public ClientInfo(String id, String adId, String ip, String port) throws UnknownHostException {
-		this.id = id; // peerId
+	/**
+	 * Constructeur utilisé par le client lorsqu'il reçoit les annonces du serveur
+	 * @param   ip    L'ip d'un client
+	 * @param   port  Le port d'un client
+	 */
+	public ClientInfo(String ip, String port) throws UnknownHostException {
 		this.port = Integer.parseInt(port);
 		this.ip = InetAddress.getByName(ip);
-		this.adId = adId; // sujet de conversation
+		this.adId = null;
+		this.id = null;
 	}
 
 	public String getId() {
@@ -53,7 +64,7 @@ public class ClientInfo {
 	}
 
 	public boolean equals(ClientInfo c) {
-		if (this.ip.equals(c.getId()) && this.port == c.getPort())
+		if (this.ip.equals(c.getIp()) && this.port == c.getPort())
 			return true;
 		return false;
 	}

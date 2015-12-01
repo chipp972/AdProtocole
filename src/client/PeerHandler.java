@@ -68,6 +68,7 @@ public class PeerHandler {
 		if (messageType.equals("RP")) {
 			if ((a = main.getAd(getPeer(id).getAdId())) == null) {
 				System.out.println("Probleme sur l'id du pair");
+				System.out.println("peer"+getPeer(id)+" "+getPeer(id).getAdId());
 				return;
 			}
 			ip = getPeer(id).getIp();
@@ -183,8 +184,8 @@ public class PeerHandler {
 		}
 	}
 
-	public void addPeer(String id, InetAddress ip, int port) {
-		ClientInfo c = new ClientInfo(id, ip, port);
+	public void addPeer(String id, String adId, InetAddress ip, int port) {
+		ClientInfo c = new ClientInfo(id, adId, ip, port);
 		if (!peerList.contains(c))
 			peerList.add(c);
 	}
