@@ -10,8 +10,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Iterator;
 import java.util.LinkedList;
-
+import java.net.InetAddress;
 import utils.Ad;
+
 
 public class AdServer extends Thread {
 	/* Infos partagées par les threads server */
@@ -146,8 +147,8 @@ public class AdServer extends Thread {
 			}
 		}
 		try {
-			srvs = new ServerSocket(port);
-			printLog("Serveur en attente de client sur "+srvs.toString());
+			srvs = new ServerSocket(port, 10, InetAddress.getLocalHost());
+			System.out.println("Serveur en attente de client sur "+srvs.toString());
 			while(true) {
 				AdServer cs;
 				try {
