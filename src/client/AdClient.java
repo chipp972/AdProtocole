@@ -20,6 +20,7 @@ import utils.Transaction;
 import utils.ClientInfo;
 import client.ServerHandler;
 import client.PeerHandler;
+import static client.Commande.*;
 
 public class AdClient extends Thread {
 
@@ -34,11 +35,6 @@ public class AdClient extends Thread {
 
 	/* Communication avec les clients */
 	private PeerHandler ph;
-
-	private final int TAILLE_COMMANDES = 2;
-	private final String ADD_AD = "ad", DEL_AD = "rm", LS_AD = "ls",
-	SEND_MSG = "ms", SHW_MSG = "sm", SHW_TRANSAC = "st", ASK_TRANSAC = "ts",
-	OK_TRANSAC = "ok", KO_TRANSAC = "ko", HELP = "he", EXIT = "ex";
 
 	/* Constructeur */
 	public AdClient(InetAddress a) {
@@ -65,19 +61,14 @@ public class AdClient extends Thread {
 		ph.cleanTransac(adId);
 	}
 
-	private void printCommands() {
-		System.out.println("Ajout d'une annonce : "+ADD_AD+" <message de l'annonce>");
-		System.out.println("Supression d'une annonce : "+DEL_AD+" <id-annonce>");
-		System.out.println("Lister toutes les annonces : "+LS_AD);
+	public void cleanPeers(String adId) {
+		ph.cleanPeers(adId);
+	}
 
-		System.out.println("Envoyer un message a un client : "+SEND_MSG+" <id-annonce> <message>");
-		System.out.println("Afficher les messages des clients : "+SHW_MSG);
-		System.out.println("Afficher les demandes de transaction : "+SHW_TRANSAC);
-		System.out.println("Demander de conclure une transaction : "+ASK_TRANSAC+" <id-annonce>");
-		System.out.println("Accepter une transaction : "+OK_TRANSAC+" <id-transaction>");
-		System.out.println("Refuser une transaction : "+KO_TRANSAC+" <id-transaction>");
-		System.out.println("Afficher cette aide : "+HELP);
-		System.out.println("Deconnexion : "+EXIT);
+	private void printCommands() {
+		for (Commande c : Commande.values()) {
+			System.out.println(c);
+		}
 	}
 
 	public void run() {
@@ -89,60 +80,70 @@ public class AdClient extends Thread {
 		while (userIn.hasNextLine() && !end) {
 			choice = userIn.nextLine();
 			try {
-				if(choice.length() >= TAILLE_COMMANDES) {
-					switch(choice.substring(0, TAILLE_COMMANDES)) {
-					case ADD_AD:
+				if(choice.length() >= Commande.getSize()) {
+					switch (Commande.valueOf(choice.substring(0, Commande.getSize()))) {
+					case AD:
 						strs = choice.trim().split(" ", 2);
 						if (strs.length > 1)
 							sendServer("AD\r\nADD\r\nMSG "+strs[1].trim()+"\r\n");
 						else
 							System.out.println("Erreur dans la commande");
 					break;
-					case DEL_AD:
+					case RM:
 						strs = choice.trim().split(" ");
 						if (strs.length > 1)
 							sendServer("AD\r\nDEL\r\nID "+strs[1].trim()+"\r\n");
 						else
 							System.out.println("Erreur dans la commande");
 					break;
-					case LS_AD:
+					case LS:
 						sh.listAds();
 					break;
-					case SEND_MSG:
+					case SM:
 						strs = choice.trim().split(" ", 3);
 						if (strs.length > 2)
 							ph.sendClient(strs[1], strs[0], strs[2]);
 						else
 							System.out.println("Erreur dans la commande");
 					break;
-					case ASK_TRANSAC:
+					case RP:
+						strs = choice.trim().split(" ", 3);
+						if (strs.length > 2)
+							ph.sendClient(strs[1], strs[0], strs[2]);
+						else
+							System.out.println("Erreur dans la commande");
+					break;
+					case LP:
+						ph.listPeers();
+					break;
+					case ST:
 						strs = choice.trim().split(" ");
 						if (strs.length > 1)
 							ph.sendClient(strs[1].trim(), strs[0].trim(), null);
 						else
 							System.out.println("Erreur dans la commande");
 					break;
-					case OK_TRANSAC:
-					case KO_TRANSAC:
+					case OK:
+					case KO:
 						strs = choice.trim().split(" ");
 						if (strs.length > 1) {
-							ph.sendClient(strs[1].trim(), strs[0].trim(), null);
-							ph.cleanTransac(Integer.parseInt(strs[1].trim()));
+							ph.sendClient(strs[1].trim(), strs[0].trim());
+							ph.cleanTransac(strs[1].trim());
 						} else {
 							System.out.println("Erreur dans la commande");
 						}
 					break;
-					case SHW_MSG:
+					case LM:
 						ph.listMsg();
 					break;
-					case SHW_TRANSAC:
+					case LT:
 						ph.listTransac();
 					break;
-					case EXIT:
+					case EX:
 						end = true;
 						sendServer("DISCONNECT\r\n");
 					break;
-					case HELP:
+					case HE:
 						printCommands();
 					break;
 					default:
@@ -152,6 +153,8 @@ public class AdClient extends Thread {
 				}
 			} catch (NumberFormatException e) {
 				System.out.println("Erreur sur un id dans la commande");
+			} catch (IllegalArgumentException e) {
+				System.out.println("Erreur dans la commande");
 			}
 		}
 		sh.close();

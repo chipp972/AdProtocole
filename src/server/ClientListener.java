@@ -17,7 +17,7 @@ public class ClientListener extends Thread {
 	private AdServer mainServ;
 	private ClientInfo ci;
 
-	public ClientListener(Socket sock, AdServer as, int id) {
+	public ClientListener(Socket sock, AdServer as, String id) {
 		try {
 			this.sock = sock;
 			this.mainServ = as;

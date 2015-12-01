@@ -17,28 +17,27 @@ import java.net.InetAddress;
 import utils.Ad;
 import utils.Transaction;
 import utils.ClientInfo;
+import static client.Commande.*;
 
 public class PeerHandler {
 
 	private DatagramSocket udpSock;
 	private LinkedList<String> msgList;
 	private LinkedList<Transaction> transacList;
+	private LinkedList<ClientInfo> peerList;
 	private DatagramPacket dp;
 	private PeerListener pl;
-	private final int TAILLE_COMMANDES = 2;
-	private final String ADD_AD = "ad", DEL_AD = "rm", LS_AD = "ls",
-	SEND_MSG = "ms", SHW_MSG = "sm", SHW_TRANSAC = "st", ASK_TRANSAC = "ts",
-	OK_TRANSAC = "ok", KO_TRANSAC = "ko", HELP = "he", EXIT = "ex";
 	private AdClient main;
 
 	public PeerHandler(AdClient m) {
 		this.main = m;
 		msgList = new LinkedList<String>();
 		transacList = new LinkedList<Transaction>();
+		peerList = new LinkedList<ClientInfo>();
 
 		try {
-			udpSock = new DatagramSocket(0, InetAddress.getByName("localhost"));
-		} catch (SocketException | UnknownHostException e) {
+			udpSock = new DatagramSocket();
+		} catch (SocketException e) {
 			e.printStackTrace();
 			System.exit(0);
 		}
@@ -52,61 +51,101 @@ public class PeerHandler {
 		return udpSock.getLocalPort();
 	}
 
+
+	/**
+	 * Envoie les messages UDP aux clients/pairs
+	 * @param  id l'id de l'annonce
+	 * @param  messageType le type d'action à effectuer
+	 * @param  message le message à envoyer si il y en a un
+	 */
 	public void sendClient(String id, String messageType, String message) throws NumberFormatException {
 		byte [] buf;
 		String msg = "";
 		Ad a = null;
-		Transaction t = null;
-		if (messageType.equals(OK_TRANSAC) || messageType.equals(KO_TRANSAC)) {
-			if ((t = getTransac(Integer.parseInt(id))) == null) {
-				System.out.println("Erreur sur l'id de transaction");
+		InetAddress ip;
+		int port;
+
+		if (messageType.equals("RP")) {
+			if ((a = main.getAd(getPeer(id).getAdId())) == null) {
+				System.out.println("Probleme sur l'id du pair");
 				return;
 			}
-			if((a = main.getAd(t.getAdId())) == null) {
-				System.out.println("Probleme sur l'annonce de la transaction");
+			ip = getPeer(id).getIp();
+			port = getPeer(id).getPort();
+	 	} else {
+			if ((a = main.getAd(id)) == null) {
+				System.out.println("Probleme sur l'id du pair");
 				return;
 			}
-		} else {
-			if((a = main.getAd(id)) == null) {
-				System.out.println("Probleme sur l'annonce de la transaction");
-				return;
-			}
-			// Si on selectionne une de nos annonces on annule l'envoie
-			if (a.getClientInfo().getIp().equals(udpSock.getLocalAddress()) &&
-				a.getClientInfo().getPort() == udpSock.getLocalPort()) {
-					System.out.println("Erreur : vous etes le proprietaire de cette annonce");
-					return;
-			}
+			ip = a.getClientInfo().getIp();
+			port = a.getClientInfo().getPort();
 		}
+
 		try {
-			switch (messageType) {
-				case SEND_MSG:
+			switch (Commande.valueOf(messageType)) {
+				case SM:
 					msg = new String("AD\r\nID "+a.getAdId()+"\r\nMSG "+message+"\r\n");
 				break;
-				case ASK_TRANSAC:
+				case RP:
+					msg = new String("AD\r\nID "+a.getAdId()+"\r\nMSG "+message+"\r\n");
+				break;
+				case ST:
 					msg = new String("AD\r\nQUERY\r\nID "+a.getAdId()+"\r\n");
-				break;
-				case OK_TRANSAC:
-					msg = new String("AD\r\nACCEPT\r\nID "+a.getAdId()+"\r\n");
-				break;
-				case KO_TRANSAC:
-					msg = new String("AD\r\nREFUSE\r\nID "+a.getAdId()+"\r\n");
 				break;
 				default:
 					System.out.println("Commande inconnue");
 					return;
 			}
 			buf = msg.getBytes();
-			if (messageType.equals(OK_TRANSAC) || messageType.equals(KO_TRANSAC)) {
-				dp = new DatagramPacket(buf, msg.length(), t.getClientIp(), t.getClientPort());
-			} else {
-				dp = new DatagramPacket(buf, msg.length(), a.getClientInfo().getIp(), a.getClientInfo().getPort());
-			}
+			dp = new DatagramPacket(buf, msg.length(), ip, port);
 			udpSock.send(dp);
-			if (messageType.equals(OK_TRANSAC)) // on suppr l'annonce après ok
+		} catch(IOException | NullPointerException e) {
+			System.out.println("Erreur lors de l'envoie au client ");
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Version pour les transactions
+	 * @param  id l'id de la transaction
+	 * @param  messageType le type d'action à effectuer
+	 * @param  message le message à envoyer si il y en a un
+	 */
+	public void sendClient(String id, String messageType) throws NumberFormatException {
+		byte [] buf;
+		String msg = "";
+		Transaction t = null;
+		Ad a = null;
+
+		if ((t = getTransac(id)) == null) {
+			System.out.println("Erreur sur l'id de transaction");
+			return;
+		}
+		if ((a = main.getAd(t.getAdId())) == null) {
+			System.out.println("Probleme sur l'annonce de la transaction");
+			return;
+		}
+		try {
+			switch (Commande.valueOf(messageType)) {
+				case OK:
+					msg = new String("AD\r\nACCEPT\r\nID "+a.getAdId()+"\r\n");
+				break;
+				case KO:
+					msg = new String("AD\r\nREFUSE\r\nID "+a.getAdId()+"\r\n");
+				break;
+				default:
+					System.out.println("Commande inconnue");
+					return;
+			}
+
+			buf = msg.getBytes();
+			dp = new DatagramPacket(buf, msg.length(), t.getClientIp(), t.getClientPort());
+			udpSock.send(dp);
+			if (messageType.equals("OK")) // on suppr l'annonce après ok
 				main.sendServer("AD\r\nDEL\r\nID "+a.getAdId()+"\r\n");
 		} catch(IOException | NullPointerException e) {
 			System.out.println("Erreur lors de l'envoie au client ");
+			e.printStackTrace();
 		}
 	}
 
@@ -133,6 +172,35 @@ public class PeerHandler {
 		}
 	}
 
+	public void listPeers() {
+		Iterator<ClientInfo> it = peerList.iterator();
+		if (peerList.isEmpty()) {
+			System.out.println("Aucun client dans les pairs.");
+		} else {
+			while (it.hasNext()) {
+				System.out.println(it.next());
+			}
+		}
+	}
+
+	public void addPeer(String id, InetAddress ip, int port) {
+		ClientInfo c = new ClientInfo(id, ip, port);
+		if (!peerList.contains(c))
+			peerList.add(c);
+	}
+
+	public ClientInfo getPeer(String id) {
+		Iterator<ClientInfo> it = peerList.iterator();
+		ClientInfo tmp;
+		if (!peerList.isEmpty()) {
+			while (it.hasNext()) {
+				tmp = it.next();
+				if (tmp.getId().equals(id))
+					return tmp;
+			}
+		}
+		return null;
+	}
 
 	public synchronized void addClientMessage(String s) {
 		msgList.add(s);
@@ -142,50 +210,56 @@ public class PeerHandler {
 		transacList.add(t);
 	}
 
-	public Transaction getTransac(int id) {
+	public Transaction getTransac(String id) {
 		Transaction t;
 		Iterator<Transaction> it = transacList.iterator();
 		while(it.hasNext()) {
 			t = it.next();
-			if (t.getId() == id)
+			if (t.getId().equals(id))
 				return t;
 		}
 		return null;
 	}
 
-	// Supprime toutes les transactions en rapport avec l'id d'annonce donné
-	public void cleanTransac(String adId) {
-		Transaction t;
-		Iterator<Transaction> it = transacList.iterator();
+	public void cleanPeers(String adId) {
+		ClientInfo c;
+		Iterator<ClientInfo> it = peerList.iterator();
 		while(it.hasNext()) {
-			t = it.next();
-			if (t.getAdId() == adId)
+			c = it.next();
+			if (c.getId().equals(adId))
 				it.remove();
 		}
 	}
+
 	// Supprime toutes les transactions qui contiennent l'annonce que l'on vient de céder
-	public void cleanTransac(int id) {
+	public void cleanTransac(String id) {
 		Transaction t;
 		String adId = null;
 		Iterator<Transaction> it = transacList.iterator();
 		while(it.hasNext()) {
 			t = it.next();
-			if (t.getId() == id) {
+			if (t.getId().equals(id)) {
 				adId = t.getAdId();
 				break;
 			}
 		}
-		if (!(adId == null))
-			cleanTransac(adId);
+		if (!(adId == null)) {
+			it = transacList.iterator();
+			while(it.hasNext()) {
+				t = it.next();
+				if (t.getAdId().equals(adId))
+					it.remove();
+			}
+		}
 	}
 
 	// Supprime la transaction identifiée par l'id
-	public void rmTransac(int id) {
+	public void rmTransac(String id) {
 		Transaction t;
 		Iterator<Transaction> it = transacList.iterator();
 		while(it.hasNext()) {
 			t = it.next();
-			if (t.getId() == id)
+			if (t.getId().equals(id))
 				it.remove();
 		}
 	}

@@ -31,7 +31,7 @@ public class AdServer extends Thread {
 	public AdServer(Socket s) throws IOException {
 		this.threadSocket = s;
 		this.out = new DataOutputStream(threadSocket.getOutputStream());
-		this.cl = new ClientListener(s, this, numClient++);
+		this.cl = new ClientListener(s, this, ""+numClient++);
 	}
 
 	synchronized public void sendAds(int start) {
@@ -68,11 +68,11 @@ public class AdServer extends Thread {
 		printLog("Client "+a.getClientInfo().getId()+" added "+a.toClientOutput());
 	}
 
-	synchronized public void delAd(String id, int clientId) {
+	synchronized public void delAd(String id, String clientId) {
 		printLog("Client "+clientId+" removed ad "+id);
 		for(int i = 0; i < adList.size(); i++) {
 			if(adList.get(i).getAdId().equals(id)) {
-				if (clientId != adList.get(i).getClientInfo().getId())
+				if (!clientId.equals(adList.get(i).getClientInfo().getId()))
 					sendErr(2, clientId);
 				else
 					removedAd.add(adList.remove(i));
@@ -82,20 +82,20 @@ public class AdServer extends Thread {
 		sendErr(1, clientId);
 	}
 
-	synchronized public void delClient(int id) {
+	synchronized public void delClient(String id) {
 		Iterator<Ad> it = adList.iterator();
 		Ad a;
 		printLog("Client "+id+" just disconnected");
 		while(it.hasNext()) {
 			a = it.next();
-			if(a.getClientInfo().getId() == id) {
+			if(a.getClientInfo().getId().equals(id)) {
 				removedAd.add(a);
 				it.remove();
 			}
 		}
 	}
 
-	public void sendErr(int id, int clientId) {
+	public void sendErr(int id, String clientId) {
 		try {
 			out.writeUTF("SYS\r\nERROR 00"+id+"\r\n");
 			out.flush();

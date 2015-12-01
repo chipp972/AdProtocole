@@ -1,3 +1,6 @@
+/**
+ * Classe qui écoute la socket TCP le serveur et transmet les infos après parsing
+ */
 package client;
 
 import java.io.DataInputStream;
@@ -10,13 +13,11 @@ public class ServerListener extends Thread {
 	private DataInputStream in;
 	private boolean end;
 	private ServerHandler main;
-	private int cId;
 
 	public ServerListener(DataInputStream in, ServerHandler main) {
 		this.in = in;
 		this.end = false;
 		this.main = main;
-		this.cId = 0;
 	}
 
 	public void close() {
@@ -28,7 +29,7 @@ public class ServerListener extends Thread {
 			try {
 				String s = in.readUTF();
 				String[] strs = s.split("\r\n");
-				for(int i = 0; i < strs.length && end == false; i++) {
+				for (int i = 0; i < strs.length && end == false; i++) {
 					switch(strs[i].trim()) {
 					case "AD":
 						i++;
@@ -36,7 +37,7 @@ public class ServerListener extends Thread {
 						case "SEND":
 							i++;
 							main.addAd(new Ad(strs[i].trim().substring(3), strs[i+3].trim().substring(4),
-									new ClientInfo(cId++, strs[i+1].trim().substring(6),
+									new ClientInfo(null, null, strs[i+1].trim().substring(6),
 											strs[i+2].trim().substring(5))));
 							i += 3;
 							break;
@@ -44,6 +45,7 @@ public class ServerListener extends Thread {
 							i++;
 							main.delAd(strs[i].trim().substring(3));
 							main.cleanTransac(strs[i].trim().substring(3)); // On supprime les annonces également
+							main.cleanPeers(strs[i].trim().substring(3)); // On supprime les pairs
 							break;
 						}
 						break;

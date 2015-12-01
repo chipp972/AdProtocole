@@ -1,4 +1,3 @@
-/* Comment to add */
 package client;
 
 import java.io.DataInputStream;
@@ -110,6 +109,10 @@ public class ServerHandler {
 
 	public void cleanTransac(String adId) {
 		main.cleanTransac(adId);
+	}
+
+	public void cleanPeers(String adId) {
+		main.cleanPeers(adId);
 	}
 
 	public void close() {

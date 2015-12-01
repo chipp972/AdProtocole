@@ -4,20 +4,20 @@ import java.net.InetAddress;
 import utils.ClientInfo;
 
 public class Transaction {
-	private int id, port;
-	private String adId;
+	private int port;
+	private String id, adId;
 	private InetAddress ip;
 
 	// On préfère ip, port à client id ici puisqu'un client n'ayant posté aucune
 	// annonce peut envoyer une transaction
-	public Transaction(int i, int p, InetAddress ad, String a) {
+	public Transaction(String i, int p, InetAddress ad, String a) {
 		this.id = i;
 		this.ip = ad;
 		this.port = p;
 		this.adId = a;
 	}
 
-	public int getId() {
+	public String getId() {
 		return id;
 	}
 
@@ -36,5 +36,11 @@ public class Transaction {
 
 	public String toString() {
 		return new String("Transaction : "+id+"|Client : "+ip+"/"+port+"|Annonce : "+adId);
+	}
+
+	public boolean equals(Transaction t) {
+		if (this.id.equals(t.getId()))
+			return true;
+		return false;
 	}
 }

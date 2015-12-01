@@ -57,4 +57,10 @@ public class Ad {
 	public void setClientInfo(ClientInfo clientInfo) {
 		this.clientInfo = clientInfo;
 	}
+
+	public boolean equals(Ad a) {
+		if (this.adId.equals(a.getAdId()))
+			return true;
+		return false;
+	}
 }
