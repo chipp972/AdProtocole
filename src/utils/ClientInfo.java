@@ -60,7 +60,7 @@ public class ClientInfo {
 	}
 
 	public String toString() {
-		return new String("Pair "+id+" = "+ip+":"+port);
+		return new String("Pair "+id+" = "+ip.getHostAddress()+":"+port);
 	}
 
 	public boolean equals(ClientInfo c) {

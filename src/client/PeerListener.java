@@ -41,7 +41,6 @@ public class PeerListener extends Thread {
 			try {
 				s.receive(dp);
 				message = new String(dp.getData());
-				System.out.println(message);
 				// Parsing et traitement du message
 				strs = message.split("\r\n");
 				if (strs[0].trim().equals("AD")) {
