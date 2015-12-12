@@ -30,4 +30,4 @@ cleanall: clean
 	rm -f *.jar bin/*/*.class
 
 pkg: cleanall
-	tar --exclude='*.json' -cf TP2.tar ../TP2
+	cd .. && tar --exclude='*.json' --exclude-vcs -cf TP2.tar TP2

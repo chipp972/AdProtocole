@@ -17,12 +17,12 @@ public class ClientListener extends Thread {
 	private AdServer mainServ;
 	private ClientInfo ci;
 
-	public ClientListener(Socket sock, AdServer as, int id) {
+	public ClientListener(Socket sock, AdServer as, String id) {
 		try {
 			this.sock = sock;
 			this.mainServ = as;
 			this.in = new DataInputStream(sock.getInputStream());
-			this.ci = new ClientInfo(id, sock.getInetAddress(), 0);
+			this.ci = new ClientInfo(id, null, sock.getInetAddress(), 0);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
